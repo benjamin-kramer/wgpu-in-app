@@ -31,8 +31,8 @@ class ViewController: UIViewController {
 
             let device = MTLCreateSystemDefaultDevice()!
             let commandQueue = device.makeCommandQueue()!
-            let devicePtr = UnsafeMutableRawPointer(mutating: Unmanaged.passRetained(device).toOpaque())
-            let queuePtr = UnsafeMutableRawPointer(mutating: Unmanaged.passRetained(commandQueue).toOpaque())
+            let devicePtr = UnsafeMutableRawPointer(mutating: Unmanaged.passUnretained(device).toOpaque())
+            let queuePtr = UnsafeMutableRawPointer(mutating: Unmanaged.passUnretained(commandQueue).toOpaque())
 
             let viewObj = ios_view_obj(
               mtl_device_ptr: devicePtr,
