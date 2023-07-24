@@ -5,9 +5,10 @@
 //
 
 import UIKit
+import MetalKit
 
 class ViewController: UIViewController {
-    @IBOutlet var metalV: MetalView!
+    @IBOutlet var metalV: MTKView!
     var wgpuCanvas: OpaquePointer?
     
     lazy var displayLink: CADisplayLink = {
@@ -59,6 +60,7 @@ class ViewController: UIViewController {
         }
         // call rust
         enter_frame(canvas)
+        metalV.setNeedsDisplay()
     }
     
     @IBAction func changeExample(sender: UISegmentedControl) {
@@ -67,6 +69,8 @@ class ViewController: UIViewController {
         }
         let index = sender.selectedSegmentIndex
         change_example(canvas, Int32(index))
+        enter_frame(canvas)
+        metalV.setNeedsDisplay()
     }
 
 }
