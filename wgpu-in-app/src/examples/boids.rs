@@ -243,7 +243,7 @@ impl Example for Boids {
     fn enter_frame(&mut self, app_surface: &AppSurface) {
         let device = &app_surface.device;
         let queue = &app_surface.queue;
-        let (frame, view) = app_surface.get_current_frame_view(None);
+        let view = app_surface.get_current_view(None);
         {
             // create render pass descriptor and its color attachments
             let color_attachments = [Some(wgpu::RenderPassColorAttachment {
@@ -299,7 +299,6 @@ impl Example for Boids {
             // done
             queue.submit(Some(command_encoder.finish()));
         }
-        frame.present();
         // update frame count
         self.frame_num += 1;
     }

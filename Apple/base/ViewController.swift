@@ -10,6 +10,9 @@ import MetalKit
 class ViewController: UIViewController {
     @IBOutlet var metalV: MTKView!
     var wgpuCanvas: OpaquePointer?
+
+    var renderer: LMCRenderer!
+    var texture: MTLTexture!
     
     lazy var displayLink: CADisplayLink = {
         CADisplayLink.init(target: self, selector: #selector(enterFrame))
@@ -25,19 +28,38 @@ class ViewController: UIViewController {
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         self.view.backgroundColor = .white
+
         if wgpuCanvas == nil {
             let viewPointer = Unmanaged.passUnretained(self.metalV).toOpaque()
             let metalLayer = Unmanaged.passUnretained(self.metalV.layer).toOpaque()
             let maximumFrames = UIScreen.main.maximumFramesPerSecond
 
             let device = MTLCreateSystemDefaultDevice()!
+            metalV.device = device
+
             let commandQueue = device.makeCommandQueue()!
-            let devicePtr = UnsafeMutableRawPointer(mutating: Unmanaged.passUnretained(device).toOpaque())
+            let devicePtr =
+              UnsafeMutableRawPointer(mutating: Unmanaged.passUnretained(device).toOpaque())
             let queuePtr = UnsafeMutableRawPointer(mutating: Unmanaged.passUnretained(commandQueue).toOpaque())
+
+            let descriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .bgra8Unorm_srgb,
+                                                                      width: 1122, height: 1122,
+                                                                      mipmapped: false)
+            descriptor.usage = [.shaderRead, .shaderWrite, .renderTarget]
+            texture = device.makeTexture(descriptor: descriptor)
+
+            renderer = .init(metalKitView: metalV, textureProvider: {
+              return self.texture
+            })
+            metalV.delegate = renderer
+
+            let texturePtr =
+                UnsafeMutableRawPointer(mutating: Unmanaged.passUnretained(texture).toOpaque())
 
             let viewObj = ios_view_obj(
               mtl_device_ptr: devicePtr,
               mtl_command_queue_ptr: queuePtr,
+              mtl_texture_ptr: texturePtr,
               view: viewPointer,
               metal_layer: metalLayer,
               maximum_frames: Int32(maximumFrames),

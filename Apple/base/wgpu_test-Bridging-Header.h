@@ -8,5 +8,6 @@
 #define wgpu_test_Bridging_Header_h
 
 #import "libwgpu_in_app.h"
+#import "LMCRenderer.h"
 
 #endif /* wgpu_test_Bridging_Header_h */

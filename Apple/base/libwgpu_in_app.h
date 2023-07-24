@@ -17,7 +17,8 @@ struct ios_view_obj
 {
     void *mtl_device_ptr;
     void *mtl_command_queue_ptr;
-  
+    void *mtl_texture_ptr;
+
     void *view;
     // CAMetalLayer
     void *metal_layer;

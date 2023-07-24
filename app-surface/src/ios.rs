@@ -7,12 +7,14 @@ use std::sync::Arc;
 use wgpu_hal as hal;
 use metal;
 use foreign_types::ForeignType;
+use wgpu_types as wgt;
 
 
 #[repr(C)]
 pub struct IOSViewObj {
     pub mtl_device_ptr: *mut c_void,
     pub mtl_command_queue_ptr: *mut c_void,
+    pub mtl_texture_ptr: *mut c_void,
 
     // metal_layer 所在的 UIView 容器
     // UIView 有一系列方便的函数可供我们在 Rust 端来调用
@@ -26,6 +28,8 @@ pub struct IOSViewObj {
 }
 
 pub struct AppSurface {
+    pub texture: wgpu::Texture,
+
     pub view: *mut Object,
     pub scale_factor: f32,
     pub sdq: crate::SurfaceDeviceQueue,
@@ -95,6 +99,30 @@ impl AppSurface {
         let (device, queue) = adapter_result.unwrap();
 
 
+        let texture;
+        unsafe {
+            let texture_ptr = metal::Texture::from_ptr(obj.mtl_texture_ptr as *mut metal::MTLTexture);
+            let mtl_texture = hal::metal::Device::texture_from_raw(
+                texture_ptr, 
+                wgt::TextureFormat::Rgba8Unorm,
+                metal::MTLTextureType::D2,
+                1,
+                1, 
+                wgpu_hal::CopyExtent{width: 1, height: 1, depth: 1}
+            );
+
+        
+            texture = device.create_texture_from_hal::<wgpu_hal::metal::Api>(mtl_texture, &wgpu::TextureDescriptor {
+                label: wgpu_hal::Label::Some("someTexture"),
+                size: wgt::Extent3d { width: 1122, height: 1122, depth_or_array_layers: 3 },
+                mip_level_count: 1,
+                sample_count: 1,
+                dimension: wgt::TextureDimension::D2,
+                format: wgt::TextureFormat::Bgra8UnormSrgb,
+                usage: wgt::TextureUsages::all(),
+                view_formats: &[wgt::TextureFormat::Bgra8UnormSrgb]
+            });
+        }
 
         let caps = surface.get_capabilities(&adapter);
         let config = wgpu::SurfaceConfiguration {
@@ -112,6 +140,8 @@ impl AppSurface {
         };
         surface.configure(&device, &config);
         AppSurface {
+            texture: texture,
+            
             view: obj.view,
             scale_factor,
             sdq: crate::SurfaceDeviceQueue {
@@ -134,6 +164,24 @@ impl AppSurface {
             (s.size.width as f32 * self.scale_factor) as u32,
             (s.size.height as f32 * self.scale_factor) as u32,
         )
+    }
+
+    pub fn get_current_view(
+        &self,
+        view_format: Option<wgpu::TextureFormat>,
+    ) -> wgpu::TextureView {
+
+        let view = self.texture.create_view(&wgpu::TextureViewDescriptor {
+            label: Some("frame texture view"),
+            format: if view_format.is_none() {
+                Some(wgpu::TextureFormat::Bgra8UnormSrgb)
+            } else {
+                view_format
+            },
+            dimension: Some(wgt::TextureViewDimension::D2),
+            ..Default::default()
+        });
+        return view;
     }
 }
 

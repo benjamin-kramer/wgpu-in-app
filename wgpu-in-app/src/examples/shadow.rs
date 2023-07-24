@@ -776,7 +776,7 @@ impl Example for Shadow {
         }
         encoder.pop_debug_group();
 
-        let (frame, view) = app_surface.get_current_frame_view(None);
+        let view = app_surface.get_current_view(None);
 
         // forward pass
         encoder.push_debug_group("forward rendering pass");
@@ -818,6 +818,5 @@ impl Example for Shadow {
         encoder.pop_debug_group();
 
         queue.submit(iter::once(encoder.finish()));
-        frame.present()
     }
 }

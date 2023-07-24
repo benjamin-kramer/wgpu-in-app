@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		434E1DF02A6ECD3E0009ABDF /* LMCShader.metal in Sources */ = {isa = PBXBuildFile; fileRef = 434E1DEB2A6ECD3E0009ABDF /* LMCShader.metal */; };
+		434E1DF12A6ECD3E0009ABDF /* LMCRenderer.mm in Sources */ = {isa = PBXBuildFile; fileRef = 434E1DEE2A6ECD3E0009ABDF /* LMCRenderer.mm */; };
 		AD4A40F0295C1EA3007D50BE /* libwgpu_in_app.a in Frameworks */ = {isa = PBXBuildFile; fileRef = AD4A40EF295C1EA3007D50BE /* libwgpu_in_app.a */; };
 		AD4B1FED26EB1B90008A6AEE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD4B1FEC26EB1B90008A6AEE /* AppDelegate.swift */; };
 		AD4B1FF126EB1B90008A6AEE /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD4B1FF026EB1B90008A6AEE /* ViewController.swift */; };
@@ -18,6 +20,12 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		434E1DEA2A6ECD3E0009ABDF /* MTBSIMDExtensions.metal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MTBSIMDExtensions.metal.h; path = base/MTBSIMDExtensions.metal.h; sourceTree = SOURCE_ROOT; };
+		434E1DEB2A6ECD3E0009ABDF /* LMCShader.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; name = LMCShader.metal; path = base/LMCShader.metal; sourceTree = SOURCE_ROOT; };
+		434E1DEC2A6ECD3E0009ABDF /* LMCUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = LMCUtils.h; path = base/LMCUtils.h; sourceTree = SOURCE_ROOT; };
+		434E1DED2A6ECD3E0009ABDF /* LMCRenderer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = LMCRenderer.h; path = base/LMCRenderer.h; sourceTree = SOURCE_ROOT; };
+		434E1DEE2A6ECD3E0009ABDF /* LMCRenderer.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = LMCRenderer.mm; path = base/LMCRenderer.mm; sourceTree = SOURCE_ROOT; };
+		434E1DEF2A6ECD3E0009ABDF /* LMCSharedTypes.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = LMCSharedTypes.h; path = base/LMCSharedTypes.h; sourceTree = SOURCE_ROOT; };
 		AD20D48A2863001E00E2C98C /* wgpu_phone.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = wgpu_phone.entitlements; sourceTree = "<group>"; };
 		AD37233828E17FAF001EF275 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = Platforms/WatchOS.platform/Developer/SDKs/WatchOS9.0.sdk/System/Library/Frameworks/UIKit.framework; sourceTree = DEVELOPER_DIR; };
 		AD4A40EF295C1EA3007D50BE /* libwgpu_in_app.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libwgpu_in_app.a; path = libs/debug/libwgpu_in_app.a; sourceTree = "<group>"; };
@@ -46,9 +54,23 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		434E1DE92A6ECD300009ABDF /* ex2 */ = {
+			isa = PBXGroup;
+			children = (
+				434E1DED2A6ECD3E0009ABDF /* LMCRenderer.h */,
+				434E1DEE2A6ECD3E0009ABDF /* LMCRenderer.mm */,
+				434E1DEB2A6ECD3E0009ABDF /* LMCShader.metal */,
+				434E1DEF2A6ECD3E0009ABDF /* LMCSharedTypes.h */,
+				434E1DEC2A6ECD3E0009ABDF /* LMCUtils.h */,
+				434E1DEA2A6ECD3E0009ABDF /* MTBSIMDExtensions.metal.h */,
+			);
+			path = ex2;
+			sourceTree = "<group>";
+		};
 		AD0CB7E127A4061E0041811B /* base */ = {
 			isa = PBXGroup;
 			children = (
+				434E1DE92A6ECD300009ABDF /* ex2 */,
 				AD4B1FF026EB1B90008A6AEE /* ViewController.swift */,
 				ADA4699026EB27CB008B1C7B /* libwgpu_in_app.h */,
 				AD4B200026EB1D31008A6AEE /* MetalView.swift */,
@@ -169,9 +191,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				434E1DF12A6ECD3E0009ABDF /* LMCRenderer.mm in Sources */,
 				AD4B200126EB1D32008A6AEE /* MetalView.swift in Sources */,
 				AD4B1FF126EB1B90008A6AEE /* ViewController.swift in Sources */,
 				AD4B1FED26EB1B90008A6AEE /* AppDelegate.swift in Sources */,
+				434E1DF02A6ECD3E0009ABDF /* LMCShader.metal in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
