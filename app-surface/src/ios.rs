@@ -4,8 +4,16 @@ use objc::{runtime::Object, *};
 use std::marker::Sync;
 use std::sync::Arc;
 
+use wgpu_hal as hal;
+use metal;
+use foreign_types::ForeignType;
+
+
 #[repr(C)]
 pub struct IOSViewObj {
+    pub mtl_device_ptr: *mut c_void,
+    pub mtl_command_queue_ptr: *mut c_void,
+
     // metal_layer 所在的 UIView 容器
     // UIView 有一系列方便的函数可供我们在 Rust 端来调用
     pub view: *mut Object,
@@ -40,14 +48,54 @@ impl AppSurface {
             (s.size.width as f32 * scale_factor) as u32,
             (s.size.height as f32 * scale_factor) as u32,
         );
-        let backends = wgpu::Backends::METAL;
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
-            backends,
-            ..Default::default()
-        });
-        let surface = unsafe { instance.create_surface_from_core_animation_layer(obj.metal_layer) };
-        let (adapter, device, queue) =
-            pollster::block_on(crate::request_device(&instance, &surface));
+
+
+
+        // let backends = wgpu::Backends::METAL;
+        // let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
+        //     backends,
+        //     ..Default::default()
+        // });
+        // let surface = unsafe { instance.create_surface_from_core_animation_layer(obj.metal_layer) };
+        // let (adapter, device, queue) =
+        //     pollster::block_on(crate::request_device(&instance, &surface));
+
+        let mtl_device;
+        unsafe {
+            let device_raw_ptr = metal::Device::from_ptr(obj.mtl_device_ptr as *mut metal::MTLDevice);
+            mtl_device = hal::metal::Device::device_from_raw(device_raw_ptr, wgpu::Features::empty());
+        };
+    
+        let mtl_command_queue;
+        unsafe {
+            let command_queue_raw_ptr = 
+                metal::CommandQueue::from_ptr(obj.mtl_command_queue_ptr as *mut metal::MTLCommandQueue);
+            mtl_command_queue = hal::metal::Queue::queue_from_raw(command_queue_raw_ptr);
+        } 
+    
+        let instance_descriptor = wgpu::InstanceDescriptor::default();
+        let wgpu_instance = wgpu::Instance::new(instance_descriptor);
+
+        let surface = unsafe { wgpu_instance.create_surface_from_core_animation_layer(obj.metal_layer) };
+    
+        let options = wgpu::RequestAdapterOptions::default();
+        let adapter = pollster::block_on(wgpu_instance.request_adapter(&options)).expect("Failed to get adapter!");
+        
+        let adapter_result;
+        unsafe {
+            adapter_result = adapter.create_device_from_hal(hal::OpenDevice::<hal::api::Metal> {
+                device: mtl_device,
+                queue: mtl_command_queue
+            }, &wgpu::DeviceDescriptor {
+                label: None,
+                features: wgpu::Features::empty(),
+                limits: wgpu::Limits::default()
+            }, None)
+        }
+        let (device, queue) = adapter_result.unwrap();
+
+
+
         let caps = surface.get_capabilities(&adapter);
         let config = wgpu::SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,

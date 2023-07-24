@@ -28,8 +28,20 @@ class ViewController: UIViewController {
             let viewPointer = Unmanaged.passUnretained(self.metalV).toOpaque()
             let metalLayer = Unmanaged.passUnretained(self.metalV.layer).toOpaque()
             let maximumFrames = UIScreen.main.maximumFramesPerSecond
-            
-            let viewObj = ios_view_obj(view: viewPointer, metal_layer: metalLayer,maximum_frames: Int32(maximumFrames), callback_to_swift: callback_to_swift)
+
+            let device = MTLCreateSystemDefaultDevice()!
+            let commandQueue = device.makeCommandQueue()!
+            let devicePtr = UnsafeMutableRawPointer(mutating: Unmanaged.passRetained(device).toOpaque())
+            let queuePtr = UnsafeMutableRawPointer(mutating: Unmanaged.passRetained(commandQueue).toOpaque())
+
+            let viewObj = ios_view_obj(
+              mtl_device_ptr: devicePtr,
+              mtl_command_queue_ptr: queuePtr,
+              view: viewPointer,
+              metal_layer: metalLayer,
+              maximum_frames: Int32(maximumFrames),
+              callback_to_swift: callback_to_swift
+            )
             
             wgpuCanvas = create_wgpu_canvas(viewObj)
         }
@@ -53,10 +65,7 @@ class ViewController: UIViewController {
         guard let canvas = self.wgpuCanvas else {
             return
         }
-        var index = sender.selectedSegmentIndex
-        if index == 2 {
-            index = 5
-        }
+        let index = sender.selectedSegmentIndex
         change_example(canvas, Int32(index))
     }
 
