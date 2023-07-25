@@ -1,5 +1,5 @@
 use crate::examples::*;
-use app_surface::{AppSurface, SurfaceFrame};
+use app_surface::AppSurface;
 
 pub struct WgpuCanvas {
     pub app_surface: AppSurface,
@@ -31,9 +31,9 @@ impl WgpuCanvas {
         }
     }
 
-    pub fn resize(&mut self) {
-        self.app_surface.resize_surface();
-    }
+    // pub fn resize(&mut self) {
+    //     self.app_surface.resize_surface();
+    // }
 
     pub fn change_example(&mut self, index: i32) {
         self.example = Self::create_a_example(&mut self.app_surface, index);

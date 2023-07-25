@@ -10,7 +10,7 @@
 //! *   Vertices and Indices describe the two points that make up a line.
 
 use super::Example;
-use app_surface::{AppSurface, SurfaceFrame};
+use app_surface::AppSurface;
 
 use std::{borrow::Cow, iter};
 
@@ -33,21 +33,21 @@ pub struct MSAALine {
     vertex_count: u32,
     sample_count: u32,
     rebuild_bundle: bool,
-    config: wgpu::SurfaceConfiguration,
 }
 
 impl MSAALine {
     pub fn new(app_surface: &mut AppSurface) -> Self {
         // Only srgb format can show real MSAA effect on metal backend.
-        let msaa_format = app_surface.config.format.add_srgb_suffix();
-        app_surface.sdq.update_config_format(msaa_format);
+        
+        // Note: we use an sRGB pixelFormat in advance to support this feature.
+        // let msaa_format = app_surface.config.format.add_srgb_suffix();
+        // app_surface.sdq.update_config_format(msaa_format);
 
-        let config = &app_surface.config;
         let device = &app_surface.device;
 
         let sample_flags = app_surface
             .adapter
-            .get_texture_format_features(config.format)
+            .get_texture_format_features(wgpu::TextureFormat::Bgra8UnormSrgb)
             .flags;
         let sample_count = {
             if sample_flags.contains(wgpu::TextureFormatFeatureFlags::MULTISAMPLE_X8) {
@@ -74,8 +74,12 @@ impl MSAALine {
             push_constant_ranges: &[],
         });
 
-        let multisampled_framebuffer =
-            Self::create_multisampled_framebuffer(device, config, sample_count);
+        let multisampled_framebuffer = Self::create_multisampled_framebuffer(
+            device, 
+            app_surface.texture.width(),
+            app_surface.texture.height(),
+            sample_count
+        );
 
         let mut vertex_data_list = vec![];
 
@@ -115,7 +119,6 @@ impl MSAALine {
 
         let bundle = Self::create_bundle(
             device,
-            config,
             &shader,
             &pipeline_layout,
             sample_count,
@@ -132,13 +135,11 @@ impl MSAALine {
             vertex_count,
             sample_count,
             rebuild_bundle: false,
-            config: config.clone(),
         }
     }
 
     fn create_bundle(
         device: &wgpu::Device,
-        config: &wgpu::SurfaceConfiguration,
         shader: &wgpu::ShaderModule,
         pipeline_layout: &wgpu::PipelineLayout,
         sample_count: u32,
@@ -161,7 +162,11 @@ impl MSAALine {
             fragment: Some(wgpu::FragmentState {
                 module: shader,
                 entry_point: "fs_main",
-                targets: &[Some(config.format.add_srgb_suffix().into())],
+                targets: &[Some(wgpu::ColorTargetState { 
+                    format: wgpu::TextureFormat::Bgra8UnormSrgb,
+                    blend: Some(wgpu::BlendState::REPLACE), 
+                    write_mask: wgpu::ColorWrites::all() 
+                })],
             }),
             primitive: wgpu::PrimitiveState {
                 topology: wgpu::PrimitiveTopology::LineList,
@@ -178,7 +183,7 @@ impl MSAALine {
         let mut encoder =
             device.create_render_bundle_encoder(&wgpu::RenderBundleEncoderDescriptor {
                 label: None,
-                color_formats: &[Some(config.format)],
+                color_formats: &[Some(wgpu::TextureFormat::Bgra8UnormSrgb)],
                 depth_stencil: None,
                 sample_count,
                 multiview: None,
@@ -197,12 +202,13 @@ impl MSAALine {
 
     fn create_multisampled_framebuffer(
         device: &wgpu::Device,
-        config: &wgpu::SurfaceConfiguration,
+        width: u32,
+        height: u32,
         sample_count: u32,
     ) -> wgpu::TextureView {
         let multisampled_texture_extent = wgpu::Extent3d {
-            width: config.width,
-            height: config.height,
+            width: width,
+            height: height,
             depth_or_array_layers: 1,
         };
         let multisampled_frame_descriptor = &wgpu::TextureDescriptor {
@@ -210,7 +216,7 @@ impl MSAALine {
             mip_level_count: 1,
             sample_count,
             dimension: wgpu::TextureDimension::D2,
-            format: config.format,
+            format: wgpu::TextureFormat::Bgra8UnormSrgb,
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
             label: None,
             view_formats: &[],
@@ -224,10 +230,10 @@ impl MSAALine {
 
 impl Example for MSAALine {
     fn resize(&mut self, app_surface: &AppSurface) {
-        self.config = app_surface.config.clone();
         self.multisampled_framebuffer = Self::create_multisampled_framebuffer(
             &app_surface.device,
-            &app_surface.config,
+            app_surface.texture.width(),
+            app_surface.texture.height(), 
             self.sample_count,
         );
     }
@@ -238,18 +244,22 @@ impl Example for MSAALine {
         if self.rebuild_bundle {
             self.bundle = Self::create_bundle(
                 device,
-                &self.config,
                 &self.shader,
                 &self.pipeline_layout,
                 self.sample_count,
                 &self.vertex_buffer_list,
                 self.vertex_count,
             );
-            self.multisampled_framebuffer =
-                MSAALine::create_multisampled_framebuffer(device, &self.config, self.sample_count);
+            self.multisampled_framebuffer = MSAALine::create_multisampled_framebuffer(
+                device, 
+                app_surface.texture.width(),
+                app_surface.texture.height(), 
+                self.sample_count
+            );
             self.rebuild_bundle = false;
         }
-        let view = app_surface.get_current_view(Some(self.config.format.add_srgb_suffix()));
+        let view = app_surface.get_current_view(None);
+        
         let mut encoder =
             device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
         {

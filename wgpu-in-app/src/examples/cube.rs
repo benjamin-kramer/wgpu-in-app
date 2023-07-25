@@ -1,7 +1,7 @@
 //! copy from wgpu's example
 
 use super::Example;
-use app_surface::{AppSurface, SurfaceFrame};
+use app_surface::AppSurface;
 use bytemuck::{Pod, Zeroable};
 use std::{borrow::Cow, future::Future, mem, pin::Pin, task};
 use wgpu::util::DeviceExt;
@@ -109,11 +109,14 @@ pub struct Cube {
     uniform_buf: wgpu::Buffer,
     pipeline: wgpu::RenderPipeline,
     pipeline_wire: Option<wgpu::RenderPipeline>,
+
+    aspect_ratio: f32,
 }
 
 impl Cube {
     pub fn new(app_surface: &AppSurface) -> Self {
-        let config = &app_surface.config;
+        let aspect_ratio = app_surface.texture.width() as f32 / app_surface.texture.height() as f32;
+
         let device = &app_surface.device;
         // Create the vertex and index buffers
         let vertex_size = mem::size_of::<Vertex>();
@@ -194,7 +197,7 @@ impl Cube {
         );
 
         // Create other resources
-        let mx_total = Self::generate_matrix(config.width as f32 / config.height as f32);
+        let mx_total = Self::generate_matrix(aspect_ratio);
         let mx_ref: &[f32; 16] = mx_total.as_ref();
         let uniform_buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Uniform Buffer"),
@@ -253,7 +256,11 @@ impl Cube {
             fragment: Some(wgpu::FragmentState {
                 module: &shader,
                 entry_point: "fs_main",
-                targets: &[Some(config.format.into())],
+                targets: &[Some(wgpu::ColorTargetState { 
+                    format: wgpu::TextureFormat::Bgra8UnormSrgb,
+                    blend: Some(wgpu::BlendState::REPLACE), 
+                    write_mask: wgpu::ColorWrites::all() 
+                })],
             }),
             primitive: wgpu::PrimitiveState {
                 cull_mode: Some(wgpu::Face::Back),
@@ -280,7 +287,7 @@ impl Cube {
                     module: &shader,
                     entry_point: "fs_wire",
                     targets: &[Some(wgpu::ColorTargetState {
-                        format: config.format,
+                        format: wgpu::TextureFormat::Bgra8UnormSrgb,
                         blend: Some(wgpu::BlendState {
                             color: wgpu::BlendComponent {
                                 operation: wgpu::BlendOperation::Add,
@@ -316,6 +323,7 @@ impl Cube {
             uniform_buf,
             pipeline,
             pipeline_wire,
+            aspect_ratio,
         }
     }
 
@@ -333,9 +341,8 @@ impl Cube {
 
 impl Example for Cube {
     fn resize(&mut self, app_surface: &AppSurface) {
-        let config = &app_surface.config;
         let queue = &app_surface.queue;
-        let mx_total = Self::generate_matrix(config.width as f32 / config.height as f32);
+        let mx_total = Self::generate_matrix(self.aspect_ratio);
         let mx_ref: &[f32; 16] = mx_total.as_ref();
         queue.write_buffer(&self.uniform_buf, 0, bytemuck::cast_slice(mx_ref));
     }

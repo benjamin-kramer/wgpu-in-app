@@ -1,5 +1,5 @@
 use super::Example;
-use app_surface::{AppSurface, SurfaceFrame};
+use app_surface::AppSurface;
 use std::borrow::Cow;
 use wgpu::util::DeviceExt;
 use wgpu::PrimitiveTopology;
@@ -16,8 +16,11 @@ impl HDRImageView {
         let hdr_pixel_format = wgpu::TextureFormat::Rgba16Float;
         // let hdr_pixel_format = wgpu::TextureFormat::Rgb10a2Unorm;
 
-        app_surface.sdq.update_config_format(hdr_pixel_format);
-        log::info!("update_config_format: Rgba16Float");
+        // Note: this doesn't work on all devices. 
+        // On devices where it does work (e.g. iPhone12Pro) the following probably makes it fail...
+        // app_surface.sdq.update_config_format(hdr_pixel_format);
+        // log::info!("update_config_format: Rgba16Float");
+
         let device = &app_surface.device;
         let queue = &app_surface.queue;
 
@@ -145,7 +148,7 @@ impl Example for HDRImageView {
     fn enter_frame(&mut self, app_surface: &AppSurface) {
         let device = &app_surface.device;
         let queue = &app_surface.queue;
-        let (frame, view) = app_surface.get_current_frame_view(None);
+        let view = app_surface.get_current_view(None);
         let mut encoder =
             device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
         {
@@ -166,6 +169,5 @@ impl Example for HDRImageView {
             rpass.draw(0..3, 0..1);
         }
         queue.submit(Some(encoder.finish()));
-        frame.present();
     }
 }

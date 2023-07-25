@@ -1,7 +1,7 @@
 //! copy from wgpu's example
 
 use super::Example;
-use app_surface::{AppSurface, SurfaceFrame};
+use app_surface::AppSurface;
 
 use std::{borrow::Cow, f32::consts, iter, mem, ops::Range, rc::Rc};
 
@@ -184,13 +184,14 @@ impl Shadow {
     }
 
     fn create_depth_texture(
-        config: &wgpu::SurfaceConfiguration,
+        width: u32,
+        height: u32,
         device: &wgpu::Device,
     ) -> wgpu::TextureView {
         let depth_texture = device.create_texture(&wgpu::TextureDescriptor {
             size: wgpu::Extent3d {
-                width: config.width,
-                height: config.height,
+                width: width,
+                height: height,
                 depth_or_array_layers: 1,
             },
             mip_level_count: 1,
@@ -206,7 +207,6 @@ impl Shadow {
     }
 
     pub fn new(app_surface: &AppSurface) -> Self {
-        let config = &app_surface.config;
         let device = &app_surface.device;
 
         let supports_storage_resources = app_surface
@@ -585,7 +585,8 @@ impl Shadow {
                 push_constant_ranges: &[],
             });
 
-            let mx_total = Self::generate_matrix(config.width as f32 / config.height as f32);
+            let aspect_ratio = app_surface.texture.width() as f32 / app_surface.texture.height() as f32;
+            let mx_total = Self::generate_matrix(aspect_ratio);
             let forward_uniforms = GlobalUniforms {
                 proj: mx_total.to_cols_array_2d(),
                 num_lights: [lights.len() as u32, 0, 0, 0],
@@ -632,7 +633,11 @@ impl Shadow {
                 fragment: Some(wgpu::FragmentState {
                     module: &shader,
                     entry_point: "fs_main",
-                    targets: &[Some(config.format.into())],
+                    targets: &[Some(wgpu::ColorTargetState { 
+                        format: wgpu::TextureFormat::Bgra8UnormSrgb,
+                        blend: Some(wgpu::BlendState::REPLACE), 
+                        write_mask: wgpu::ColorWrites::all() 
+                    })],
                 }),
                 primitive: wgpu::PrimitiveState {
                     front_face: wgpu::FrontFace::Ccw,
@@ -657,7 +662,11 @@ impl Shadow {
             }
         };
 
-        let forward_depth = Self::create_depth_texture(config, device);
+        let forward_depth = Self::create_depth_texture(
+            app_surface.texture.width() as u32, 
+            app_surface.texture.height() as u32, 
+            device
+        );
 
         Self {
             entities,
@@ -675,11 +684,11 @@ impl Shadow {
 
 impl Example for Shadow {
     fn resize(&mut self, app_surface: &AppSurface) {
-        let config = &app_surface.config;
+        let aspect_ratio = app_surface.texture.width() as f32 / app_surface.texture.height() as f32;
         let device = &app_surface.device;
         let queue = &app_surface.queue;
         // update view-projection matrix
-        let mx_total = Self::generate_matrix(config.width as f32 / config.height as f32);
+        let mx_total = Self::generate_matrix(aspect_ratio);
         let mx_ref: &[f32; 16] = mx_total.as_ref();
         queue.write_buffer(
             &self.forward_pass.uniform_buf,
@@ -687,7 +696,11 @@ impl Example for Shadow {
             bytemuck::cast_slice(mx_ref),
         );
 
-        self.forward_depth = Self::create_depth_texture(config, device);
+        self.forward_depth = Self::create_depth_texture(
+            app_surface.texture.width() as u32, 
+            app_surface.texture.height() as u32, 
+            device
+        );
     }
 
     fn enter_frame(&mut self, app_surface: &AppSurface) {

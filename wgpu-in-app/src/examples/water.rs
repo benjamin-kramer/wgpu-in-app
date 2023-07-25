@@ -1,7 +1,7 @@
 //! copy from wgpu's example
 
 use super::{point_gen, Example};
-use app_surface::{AppSurface, SurfaceFrame};
+use app_surface::AppSurface;
 
 use bytemuck::{Pod, Zeroable};
 use glam::Vec3;
@@ -92,7 +92,6 @@ pub struct Water {
 
 impl Water {
     pub fn new(app_surface: &AppSurface) -> Self {
-        let config = &app_surface.config;
         let device = &app_surface.device;
         let queue = &app_surface.queue;
         // Size of one water vertex
@@ -287,9 +286,10 @@ impl Water {
         // This puts values behind what was laid out in the bind group layout.
 
         let (reflect_view, depth_buffer, water_bind_group) = Self::initialize_resources(
-            config,
             device,
             queue,
+            app_surface.texture.width(),
+            app_surface.texture.height(),
             &water_uniform_buf,
             &terrain_normal_uniform_buf,
             &terrain_flipped_uniform_buf,
@@ -355,7 +355,7 @@ impl Water {
                 // Describes how the colour will be interpolated
                 // and assigned to the output attachment.
                 targets: &[Some(wgpu::ColorTargetState {
-                    format: config.format,
+                    format: wgpu::TextureFormat::Bgra8UnormSrgb,
                     blend: Some(wgpu::BlendState {
                         color: wgpu::BlendComponent {
                             src_factor: wgpu::BlendFactor::SrcAlpha,
@@ -415,7 +415,11 @@ impl Water {
             fragment: Some(wgpu::FragmentState {
                 module: &terrain_module,
                 entry_point: "fs_main",
-                targets: &[Some(config.format.into())],
+                targets: &[Some(wgpu::ColorTargetState { 
+                    format: wgpu::TextureFormat::Bgra8UnormSrgb,
+                    blend: Some(wgpu::BlendState::REPLACE), 
+                    write_mask: wgpu::ColorWrites::all() 
+                })],
             }),
             primitive: wgpu::PrimitiveState {
                 front_face: wgpu::FrontFace::Ccw,
@@ -517,9 +521,10 @@ impl Water {
     /// Initializes Uniforms and textures.
     ///
     fn initialize_resources(
-        config: &wgpu::SurfaceConfiguration,
         device: &wgpu::Device,
         queue: &wgpu::Queue,
+        width: u32,
+        height: u32,
         water_uniforms: &wgpu::Buffer,
         terrain_normal_uniforms: &wgpu::Buffer,
         terrain_flipped_uniforms: &wgpu::Buffer,
@@ -531,7 +536,7 @@ impl Water {
             terrain_normal,
             terrain_flipped,
             water,
-        } = Self::generate_uniforms(config.width, config.height);
+        } = Self::generate_uniforms(width, height);
 
         // Put the uniforms into buffers on the GPU
         queue.write_buffer(
@@ -547,8 +552,8 @@ impl Water {
         queue.write_buffer(water_uniforms, 0, bytemuck::cast_slice(&[water]));
 
         let texture_extent = wgpu::Extent3d {
-            width: config.width,
-            height: config.height,
+            width: width,
+            height: height,
             depth_or_array_layers: 1,
         };
 
@@ -558,7 +563,7 @@ impl Water {
             mip_level_count: 1,
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
-            format: config.format,
+            format: wgpu::TextureFormat::Bgra8UnormSrgb,
             usage: wgpu::TextureUsages::TEXTURE_BINDING
                 | wgpu::TextureUsages::COPY_DST
                 | wgpu::TextureUsages::RENDER_ATTACHMENT,
@@ -635,10 +640,9 @@ impl Water {
 
 impl Example for Water {
     fn resize(&mut self, app_surface: &AppSurface) {
-        let config = &app_surface.config;
         let device = &app_surface.device;
         let queue = &app_surface.queue;
-        if config.width == 0 && config.height == 0 {
+        if app_surface.texture.width() == 0 && app_surface.texture.height() == 0 {
             // Stop rendering altogether.
             self.active = None;
             return;
@@ -648,9 +652,10 @@ impl Example for Water {
         // Regenerate all of the buffers and textures.
 
         let (reflect_view, depth_buffer, water_bind_group) = Self::initialize_resources(
-            config,
             device,
             queue,
+            app_surface.texture.width(),
+            app_surface.texture.height(),
             &self.water_uniform_buf,
             &self.terrain_normal_uniform_buf,
             &self.terrain_flipped_uniform_buf,

@@ -1,7 +1,7 @@
 //! copy from wgpu's example
 
 use super::Example;
-use app_surface::{AppSurface, SurfaceFrame};
+use app_surface::AppSurface;
 use bytemuck::{Pod, Zeroable};
 use rand::{
     distributions::{Distribution, Uniform},
@@ -41,7 +41,6 @@ pub struct Boids {
 
 impl Boids {
     pub fn new(app_surface: &AppSurface) -> Self {
-        let config = &app_surface.config;
         let device = &app_surface.device;
 
         let compute_shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
@@ -149,7 +148,11 @@ impl Boids {
             fragment: Some(wgpu::FragmentState {
                 module: &draw_shader,
                 entry_point: "main_fs",
-                targets: &[Some(config.format.into())],
+                targets: &[Some(wgpu::ColorTargetState { 
+                    format: wgpu::TextureFormat::Bgra8UnormSrgb,
+                    blend: Some(wgpu::BlendState::REPLACE), 
+                    write_mask: wgpu::ColorWrites::all() 
+                })],
             }),
             primitive: wgpu::PrimitiveState::default(),
             depth_stencil: None,

@@ -1,5 +1,5 @@
 use super::Example;
-use app_surface::{AppSurface, SurfaceFrame};
+use app_surface::AppSurface;
 
 use zerocopy::{AsBytes, FromBytes};
 
@@ -57,8 +57,7 @@ impl PageTurning {
     pub fn new(app_surface: &mut AppSurface) -> Self {
         let device = &app_surface.device;
         let queue = &app_surface.queue;
-        let config = &app_surface.config;
-        let scale_factor = app_surface.scale_factor;
+        let scale_factor = 1.0;
         let encoder =
             device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
 
@@ -66,8 +65,8 @@ impl PageTurning {
         let turning_buf = BufferObj::create_uniform_buffer(device, &turning_uniform, None);
 
         // Create the vertex and index buffers
-        let vpw = config.width as f32;
-        let vph = config.height as f32;
+        let vpw = app_surface.texture.width() as f32;
+        let vph = app_surface.texture.height() as f32;
         let (vertices, indices) = Plane::new_by_rect(
             page_rect,
             (vpw / (scale_factor * 2.0)) as u32,
@@ -95,8 +94,8 @@ impl PageTurning {
         let turning_node = builder.build(device);
 
         let size = wgpu::Extent3d {
-            width: config.width,
-            height: config.height,
+            width: app_surface.texture.width(),
+            height: app_surface.texture.height(),
             depth_or_array_layers: 1,
         };
         let depth_texture_view = crate::depth_stencil::create_depth_texture_view(size, device);

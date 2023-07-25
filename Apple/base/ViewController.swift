@@ -30,8 +30,6 @@ class ViewController: UIViewController {
         self.view.backgroundColor = .white
 
         if wgpuCanvas == nil {
-            let viewPointer = Unmanaged.passUnretained(self.metalV).toOpaque()
-            let metalLayer = Unmanaged.passUnretained(self.metalV.layer).toOpaque()
             let maximumFrames = UIScreen.main.maximumFramesPerSecond
 
             let device = MTLCreateSystemDefaultDevice()!
@@ -60,9 +58,6 @@ class ViewController: UIViewController {
               mtl_device_ptr: devicePtr,
               mtl_command_queue_ptr: queuePtr,
               mtl_texture_ptr: texturePtr,
-              view: viewPointer,
-              metal_layer: metalLayer,
-              maximum_frames: Int32(maximumFrames),
               callback_to_swift: callback_to_swift
             )
             

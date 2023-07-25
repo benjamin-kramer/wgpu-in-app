@@ -19,10 +19,6 @@ struct ios_view_obj
     void *mtl_command_queue_ptr;
     void *mtl_texture_ptr;
 
-    void *view;
-    // CAMetalLayer
-    void *metal_layer;
-    int maximum_frames;
     void (*callback_to_swift)(int32_t arg);
 };
 
