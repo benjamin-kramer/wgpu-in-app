@@ -10,6 +10,7 @@ target/
 
 # IDE/Editor configuration files
 .vscode
+*.xcuserdatad
 .idea
 
 **/*.so 
