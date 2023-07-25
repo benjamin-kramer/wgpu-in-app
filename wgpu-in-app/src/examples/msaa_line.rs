@@ -229,15 +229,6 @@ impl MSAALine {
 }
 
 impl Example for MSAALine {
-    fn resize(&mut self, app_surface: &AppSurface) {
-        self.multisampled_framebuffer = Self::create_multisampled_framebuffer(
-            &app_surface.device,
-            app_surface.texture.width(),
-            app_surface.texture.height(), 
-            self.sample_count,
-        );
-    }
-
     fn enter_frame(&mut self, app_surface: &AppSurface) {
         let device = &app_surface.device;
         let queue = &app_surface.queue;

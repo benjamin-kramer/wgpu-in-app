@@ -683,26 +683,6 @@ impl Shadow {
 }
 
 impl Example for Shadow {
-    fn resize(&mut self, app_surface: &AppSurface) {
-        let aspect_ratio = app_surface.texture.width() as f32 / app_surface.texture.height() as f32;
-        let device = &app_surface.device;
-        let queue = &app_surface.queue;
-        // update view-projection matrix
-        let mx_total = Self::generate_matrix(aspect_ratio);
-        let mx_ref: &[f32; 16] = mx_total.as_ref();
-        queue.write_buffer(
-            &self.forward_pass.uniform_buf,
-            0,
-            bytemuck::cast_slice(mx_ref),
-        );
-
-        self.forward_depth = Self::create_depth_texture(
-            app_surface.texture.width() as u32, 
-            app_surface.texture.height() as u32, 
-            device
-        );
-    }
-
     fn enter_frame(&mut self, app_surface: &AppSurface) {
         let device = &app_surface.device;
         let queue = &app_surface.queue;

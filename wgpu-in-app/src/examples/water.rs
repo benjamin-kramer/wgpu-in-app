@@ -56,7 +56,7 @@ struct Uniforms {
 pub struct Water {
     water_vertex_buf: wgpu::Buffer,
     water_vertex_count: usize,
-    water_bind_group_layout: wgpu::BindGroupLayout,
+    // water_bind_group_layout: wgpu::BindGroupLayout,
     water_bind_group: wgpu::BindGroup,
     water_uniform_buf: wgpu::Buffer,
     water_pipeline: wgpu::RenderPipeline,
@@ -69,12 +69,12 @@ pub struct Water {
     /// camera has been placed underwater.
     ///
     terrain_flipped_bind_group: wgpu::BindGroup,
-    terrain_normal_uniform_buf: wgpu::Buffer,
+    // terrain_normal_uniform_buf: wgpu::Buffer,
     ///
     /// Contains uniform variables where the camera
     /// has been placed underwater.
     ///
-    terrain_flipped_uniform_buf: wgpu::Buffer,
+    // terrain_flipped_uniform_buf: wgpu::Buffer,
     terrain_pipeline: wgpu::RenderPipeline,
 
     reflect_view: wgpu::TextureView,
@@ -440,7 +440,7 @@ impl Water {
         Self {
             water_vertex_buf,
             water_vertex_count: water_vertices.len(),
-            water_bind_group_layout,
+            // water_bind_group_layout,
             water_bind_group,
             water_uniform_buf,
             water_pipeline,
@@ -449,8 +449,8 @@ impl Water {
             terrain_vertex_count: terrain_vertices.len(),
             terrain_normal_bind_group,
             terrain_flipped_bind_group,
-            terrain_normal_uniform_buf,
-            terrain_flipped_uniform_buf,
+            // terrain_normal_uniform_buf,
+            // terrain_flipped_uniform_buf,
             terrain_pipeline,
 
             reflect_view,
@@ -639,34 +639,6 @@ impl Water {
 }
 
 impl Example for Water {
-    fn resize(&mut self, app_surface: &AppSurface) {
-        let device = &app_surface.device;
-        let queue = &app_surface.queue;
-        if app_surface.texture.width() == 0 && app_surface.texture.height() == 0 {
-            // Stop rendering altogether.
-            self.active = None;
-            return;
-        }
-        self.active = Some(self.current_frame);
-
-        // Regenerate all of the buffers and textures.
-
-        let (reflect_view, depth_buffer, water_bind_group) = Self::initialize_resources(
-            device,
-            queue,
-            app_surface.texture.width(),
-            app_surface.texture.height(),
-            &self.water_uniform_buf,
-            &self.terrain_normal_uniform_buf,
-            &self.terrain_flipped_uniform_buf,
-            &self.water_bind_group_layout,
-        );
-        self.water_bind_group = water_bind_group;
-
-        self.depth_buffer = depth_buffer;
-        self.reflect_view = reflect_view;
-    }
-
     #[allow(clippy::eq_op)]
     fn enter_frame(&mut self, app_surface: &AppSurface) {
         let device = &app_surface.device;

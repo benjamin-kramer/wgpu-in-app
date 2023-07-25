@@ -106,11 +106,8 @@ pub struct Cube {
     index_buf: wgpu::Buffer,
     index_count: usize,
     bind_group: wgpu::BindGroup,
-    uniform_buf: wgpu::Buffer,
     pipeline: wgpu::RenderPipeline,
     pipeline_wire: Option<wgpu::RenderPipeline>,
-
-    aspect_ratio: f32,
 }
 
 impl Cube {
@@ -320,10 +317,10 @@ impl Cube {
             index_buf,
             index_count: index_data.len(),
             bind_group,
-            uniform_buf,
+            // uniform_buf,
             pipeline,
             pipeline_wire,
-            aspect_ratio,
+            // aspect_ratio,
         }
     }
 
@@ -340,13 +337,6 @@ impl Cube {
 }
 
 impl Example for Cube {
-    fn resize(&mut self, app_surface: &AppSurface) {
-        let queue = &app_surface.queue;
-        let mx_total = Self::generate_matrix(self.aspect_ratio);
-        let mx_ref: &[f32; 16] = mx_total.as_ref();
-        queue.write_buffer(&self.uniform_buf, 0, bytemuck::cast_slice(mx_ref));
-    }
-
     fn enter_frame(&mut self, app_surface: &AppSurface) {
         let device = &app_surface.device;
         let queue = &app_surface.queue;
